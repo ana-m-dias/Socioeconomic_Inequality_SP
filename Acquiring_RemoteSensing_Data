@@ -1,0 +1,238 @@
+var l9 = ee.ImageCollection("LANDSAT/LC09/C02/T1_L2"),
+    l7 = ee.ImageCollection("LANDSAT/LE07/C02/T1_L2"),
+    l8 = ee.ImageCollection("LANDSAT/LC08/C02/T1_L2"),
+    l5 = ee.ImageCollection("LANDSAT/LT05/C02/T1_L2"),
+    image = ee.Image("projects/ee-anadias/assets/Temp_2010_tiff_definitivo"),
+    geometry = 
+    /* color: #d63000 */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.MultiPolygon(
+        [[[[-46.42874908857623, -23.60151349052851],
+           [-46.42874908857623, -23.604708654010867],
+           [-46.42409277372638, -23.604708654010867],
+           [-46.42409277372638, -23.60151349052851]]],
+         [[[-46.68817234449664, -23.706298762337962],
+           [-46.68817234449664, -23.709520837017884],
+           [-46.68350530081073, -23.709520837017884],
+           [-46.68350530081073, -23.706298762337962]]]], null, false),
+    geometry2 = /* color: #98ff00 */ee.Geometry.MultiPoint(
+        [[-46.68617678098956, -23.707841045817048],
+         [-46.42542662655435, -23.603503729345135],
+         [-46.68624104934852, -23.707886692605744],
+         [-46.70795064789287, -23.58006477007779]]),
+    table = ee.FeatureCollection("projects/ee-anadias/assets/zona_urbana_SP"),
+    cab = ee.FeatureCollection("projects/ee-anadias/assets/classe_AeB_2022"),
+    cc1 = ee.FeatureCollection("projects/ee-anadias/assets/classe_C1_2022"),
+    cc2 = ee.FeatureCollection("projects/ee-anadias/assets/classe_C2_2022"),
+    cd = ee.FeatureCollection("projects/ee-anadias/assets/classe_D_2022"),
+    ce = ee.FeatureCollection("projects/ee-anadias/assets/classe_E_2022");
+
+
+var cloudMaskL457 = function(image) {
+  var qa = image.select('QA_PIXEL');
+  // If the cloud bit (5) is set and the cloud confidence (7) is high 
+  // or the cloud shadow bit is set (3), then it's a bad pixel.
+  var cloud = qa.bitwiseAnd(1 << 5)
+                  .and(qa.bitwiseAnd(1 << 7))
+                  .or(qa.bitwiseAnd(1 << 3));
+  // Remove edge pixels that don't occur in all bands
+  var mask2 = image.mask().reduce(ee.Reducer.min());
+  return image.updateMask(cloud.not()).updateMask(mask2);
+};
+
+var calcularNdvi5 = function(image){
+         var NDVI = image.normalizedDifference(['B4','B3']).rename('NDVI');
+         return image.addBands(NDVI)
+};
+
+
+var calcularNdvi7 = function(image){
+         var NDVI = image.normalizedDifference(['B4','B3']).rename('NDVI');
+         return image.addBands(NDVI)
+};
+
+var calcularNdvi8 = function(image){
+         var NDVI = image.normalizedDifference(['B4','B3']).rename('NDVI');
+         return image.addBands(NDVI)
+};
+
+var calcularNdvi9 = function(image){
+         var NDVI = image.normalizedDifference(['B4','B3']).rename('NDVI');
+         return image.addBands(NDVI)
+};
+
+var K2C5 = function(image){
+  var calcularC5 = image.select('B6').multiply(0.00341802).subtract(124.16).rename('Celsius')
+  return image.addBands(calcularC5)
+};
+
+var K2C7 = function(image){
+  var calcularC7 = image.select('B6').multiply(0.00341802).subtract(124.16).rename('Celsius')
+  return image.addBands(calcularC7)
+};
+
+var K2C8 = function(image){
+  var calcularC8 = image.select('B6').multiply(0.00341802).subtract(124.16).rename('Celsius')
+  return image.addBands(calcularC8)
+}
+
+var K2C9 = function(image){
+  var calcularC9 = image.select('B6').multiply(0.00341802).subtract(124.16).rename('Celsius')
+  return image.addBands(calcularC9)
+}
+
+var ScaleAndOffset8 = function(image){
+  var unmasking8 = image.select(['SR_B4','SR_B5','SR_B6']).multiply(2.75e-05).subtract(0.2)
+  return image.addBands(unmasking8)
+}
+
+var ScaleAndOffset9 = function(image){
+  var unmasking9 = image.select(['SR_B4','SR_B5','SR_B6']).multiply(2.75e-05).subtract(0.2)
+  return image.addBands(unmasking9)
+}
+
+var ScaleAndOffset7 = function(image){
+  var unmasking7 = image.select(['SR_B3','SR_B4','SR_B5']).multiply(2.75e-05).subtract(0.2)
+  return image.addBands(unmasking7)
+}
+
+var ScaleAndOffset5 = function(image){
+  var unmasking5 = image.select(['SR_B3','SR_B4','SR_B5']).multiply(2.75e-05).subtract(0.2)
+  return image.addBands(unmasking5)
+}
+
+var datasetl5 = l5.filterDate('2009-10-01','2010-04-30')
+                  .map(cloudMaskL457)
+                  .filterBounds(table)
+                  .map(ScaleAndOffset5)
+                  .select(['SR_B3','SR_B4','SR_B5','ST_B6','QA_PIXEL'],['B3','B4','B5','B6','QA_PIXEL'])
+                  .map(calcularNdvi5)
+                  .map(K2C5);
+                  
+                  
+                  ///CD_TIPO_1
+
+var datasetl7 = l7.filterDate('2009-10-01','2010-04-30')
+                  .filterBounds(table)
+                  .map(cloudMaskL457)
+                  .map(ScaleAndOffset7)
+                  .select(['SR_B3','SR_B4','SR_B5','ST_B6','QA_PIXEL'],['B3','B4','B5','B6','QA_PIXEL'])
+                  .map(calcularNdvi7)
+                  .map(K2C7).aside(print);
+               
+var datasetl8 = l8.filterDate('2021-10-01','2022-04-30')
+                  .filterBounds(table)
+                  .map(cloudMaskL457)
+                  .map(ScaleAndOffset8)
+                  .select(['SR_B4','SR_B5','SR_B6','ST_B10','QA_PIXEL'],['B3','B4','B5','B6','QA_PIXEL'])
+                  .map(calcularNdvi8)
+                  .map(K2C8).aside(print);
+                  
+var datasetl9 = l9.filterDate('2021-10-01','2022-04-30')
+                  .filterBounds(table)
+                  .map(cloudMaskL457)
+                  .map(ScaleAndOffset9)
+                  .select(['SR_B4','SR_B5','SR_B6','ST_B10','QA_PIXEL'],['B3','B4','B5','B6','QA_PIXEL'])
+                  .map(calcularNdvi9)
+                  .map(K2C9).aside(print);
+
+////// var dataset l5l7 válido apenas para o ano de 2010, comentar tudo daqui para baixo se for censo de 2022
+
+var dataset = datasetl7.merge(datasetl5).select(['NDVI',"Celsius"]).aside(print);
+ 
+var iMedian = dataset.reduce(ee.Reducer.median());
+
+var iMean = dataset.reduce(ee.Reducer.mean());
+
+var iMaxMin = dataset.reduce(ee.Reducer.minMax());
+
+var iStdv = dataset.reduce(ee.Reducer.stdDev());
+
+var iquartil = dataset.reduce(ee.Reducer.percentile([25,75]));
+
+var All = iMedian.addBands(iMean.addBands(iMaxMin.addBands(iStdv.addBands(iquartil)))).aside(print)
+
+//var All = All.toFloat()
+/////////// comentar até aqui se for usar o censo de 2022, pra baixo já está organizado para rodar com a variável All, que for criada tanto para 2010 quanto para 2022
+/*
+////// var dataset l7l8l9 válido apenas para o ano de 2022, comentar tudo daqui para baixo se for censo de 2010
+var dataset = datasetl9.merge(datasetl8).select(['NDVI',"Celsius"]).aside(print);
+
+var iMedian = dataset.reduce(ee.Reducer.median());
+
+var iMean = dataset.reduce(ee.Reducer.mean());
+
+var iMaxMin = dataset.reduce(ee.Reducer.minMax());
+
+var iStdv = dataset.reduce(ee.Reducer.stdDev());
+
+
+var iquartil = dataset.reduce(ee.Reducer.percentile([25,75]));
+
+var All = iMedian.addBands(iMean.addBands(iMaxMin.addBands(iStdv.addBands(iquartil)))).clip(table);
+*/
+/////////// comentar até aqui se for usar o censo de 2010, pra baixo já está organizado para rodar com a variável All, que for criada tanto para 2010 quanto para 2022
+
+var reducedminmax = All.reduceRegions({
+    collection:table,
+    reducer:ee.Reducer.minMax(), 
+    scale: 30
+  });
+
+var reducedpercent = All.reduceRegions({
+    collection:table,
+    reducer:ee.Reducer.percentile([25,50,75]), 
+    scale: 30
+  });
+
+var reducedmediana = All.reduceRegions ({
+    collection: table,
+    reducer:ee.Reducer.median(),
+    scale: 30 
+});
+
+var statistics = reducedmediana.merge(reducedpercent.merge(reducedminmax));
+Map.addLayer (statistics)
+
+
+var projection = All.select('NDVI_mean').projection().getInfo();
+
+Export.image.toDrive({
+  image: All.select("Celsius_median"),
+  description: 'LST_2010_tiff_definitivo',
+  region: table.geometry(),
+  scale:30
+});
+
+
+Export.table.toDrive({
+  collection: statistics,
+  fileFormat: 'csv',
+  description:"classe_AB_2022_NdviTemp_l8l9"
+});
+
+
+//Map.addLayer(All, {palette: ["#640000","#ff0000","#ffff00","#00c800","#006400"]}, "NDVI median");
+Map.addLayer(table)
+
+var ndvi = All.select('NDVI_median').clip(table);  // substitua pelo nome correto da banda NDVI
+Map.addLayer(ndvi,{min: -1, max: 1, palette: ["#640000","#ff0000","#ffff00","#00c800","#006400"]})
+Map.addLayer(
+  ndvi,
+  {min: -1, max: 1, palette: ["#640000","#ff0000","#ffff00","#00c800","#006400"]},
+  "NDVI median"
+);
+
+
+
+
+
+
+
